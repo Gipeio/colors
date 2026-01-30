@@ -1,0 +1,20 @@
+{
+  "name": "colors",
+  "version": "1.0.0",
+  "description": "my first multi agent system webapp",
+  "homepage": "https://github.com/Gipeio/colors#readme",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Gipeio/colors/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gipeio/colors.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
