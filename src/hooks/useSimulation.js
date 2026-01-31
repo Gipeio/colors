@@ -1,82 +1,80 @@
-import { useState, useRef, useEffect } from "react";
-import { initializeAgents } from "../simulation/initialization";
-import { moveAgents } from "../simulation/movement";
-import { detectConnectedGroups } from "../simulation/groups";
-import { applyColorTransfers } from "../simulation/colorTransfer";
-import { checkWinCondition } from "../simulation/winCondition";
+import { useState, useRef, useEffect } from 'react';
+import { initializeAgents, tickAgents, getColorDistribution, hasWinner } from '../simulation';
 
-
-/**
- * Custom React hook to manage the simulation of agents.
- *
- * Provides functions to start, stop, and reset the simulation,
- * and exposes the current state of agents, iterations, and status.
- *
- * @returns {{
- *   agents: Array<{id:number, x:number, y:number, color:string}>,
- *   isRunning: boolean,
- *   isFinished: boolean,
- *   iteration: number,
- *   start: (config: {gridWidth:number, gridHeight:number, numAgents:number}) => void,
- *   stop: () => void,
- *   reset: () => void
- * }}
- *
- * @example
- * const { agents, start, stop, reset } = useSimulation();
- * start({ gridWidth: 10, gridHeight: 10, numAgents: 50 });
- */
-export function useSimulation() {
+export function useSimulation({ initialWidth = 20, initialHeight = 20, initialAgents = 100 }) {
+  const [gridWidth, setGridWidth] = useState(initialWidth);
+  const [gridHeight, setGridHeight] = useState(initialHeight);
+  const [agentCount, setAgentCount] = useState(initialAgents);
   const [agents, setAgents] = useState([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
   const [iteration, setIteration] = useState(0);
-  const intervalRef = useRef(null);
+  const [running, setRunning] = useState(false);
+  const [winner, setWinner] = useState(null);
 
-  function start(config) {
-    const newAgents = initializeAgents(
-      config.gridWidth,
-      config.gridHeight,
-      config.numAgents
-    );
+  const requestRef = useRef();
+
+  // Initialize agents
+  const initialize = () => {
+    const newAgents = initializeAgents(agentCount, gridWidth, gridHeight);
     setAgents(newAgents);
     setIteration(0);
-    setIsFinished(false);
-    setIsRunning(true);
-  }
-
-  function stop() {
-    setIsRunning(false);
-  }
-
-  function reset() {
-    stop();
-    setAgents([]);
-    setIteration(0);
-    setIsFinished(false);
-  }
+    setWinner(null);
+  };
 
   useEffect(() => {
-    if (!isRunning) return;
+    initialize();
+  }, []);
 
-    intervalRef.current = setInterval(() => {
-      setAgents(prev => {
-        let next = moveAgents(prev, config.gridWidth, config.gridHeight);
-        const groups = detectConnectedGroups(next);
-        next = applyColorTransfers(next, groups);
+  // Simulation tick loop
+  const tick = () => {
+    setAgents(prev => {
+      const updated = tickAgents(prev, gridWidth, gridHeight);
+      const dist = getColorDistribution(updated);
+      if (hasWinner(dist)) {
+        setWinner(Object.keys(dist)[0]);
+        setRunning(false);
+        cancelAnimationFrame(requestRef.current);
+      }
+      return updated;
+    });
+    setIteration(prev => prev + 1);
+    if (running) requestRef.current = requestAnimationFrame(tick);
+  };
 
-        if (checkWinCondition(next)) {
-          setIsRunning(false);
-          setIsFinished(true);
-        }
+  const start = () => {
+    if (!running) {
+      setRunning(true);
+      requestRef.current = requestAnimationFrame(tick);
+    }
+  };
 
-        setIteration(i => i + 1);
-        return next;
-      });
-    }, 1000);
+  const stop = () => {
+    setRunning(false);
+    cancelAnimationFrame(requestRef.current);
+  };
 
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning]);
+  const restart = (config) => {
+    stop();
+    if (config) {
+      if (config.gridWidth) setGridWidth(config.gridWidth);
+      if (config.gridHeight) setGridHeight(config.gridHeight);
+      if (config.agentCount) setAgentCount(config.agentCount);
+    }
+    initialize();
+  };
 
-  return { agents, isRunning, isFinished, iteration, start, stop, reset };
+  return {
+    agents,
+    gridWidth,
+    gridHeight,
+    agentCount,
+    iteration,
+    running,
+    winner,
+    start,
+    stop,
+    restart,
+    setGridWidth,
+    setGridHeight,
+    setAgentCount
+  };
 }

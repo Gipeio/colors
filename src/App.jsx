@@ -1,27 +1,23 @@
-import React, { useState } from "react";
-import { useSimulation } from "./hooks/useSimulation";
-import SimulationCanvas from "./components/SimulationCanvas";
-import ConfigPanel from "./components/ConfigPanel";
-import ControlPanel from "./components/ControlPanel";
-import InfoPanel from "./components/InfoPanel";
+import React from 'react';
+import { useSimulation } from './hooks/useSimulation';
+import { SimulationCanvas } from './components/canvas/SimulationCanvas';
+import { ControlPanel } from './components/panels/ControlPanel';
+import { InfoPanel } from './components/panels/InfoPanel';
+import './styles/global.css';
+import './styles/theme.css';
 
 export default function App() {
-  const [config, setConfig] = useState({
-    gridWidth: 20,
-    gridHeight: 20,
-    numAgents: 50,
-    canvasSize: 800
-  });
-
-  const sim = useSimulation(config);
+  const sim = useSimulation({ initialWidth: 20, initialHeight: 20, initialAgents: 100 });
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Système Multi-Agent</h1>
-      <ConfigPanel config={config} setConfig={setConfig} disabled={sim.isRunning} />
-      <ControlPanel simulation={sim} config={config} />
-      <SimulationCanvas agents={sim.agents} config={config} />
-      <InfoPanel simulation={sim} />
+    <div className="app">
+      <h1>Multi-Agent Grid Simulation</h1>
+      <ControlPanel {...sim} />
+      <InfoPanel iteration={sim.iteration} winner={sim.winner} colorDistribution={sim.agents.reduce((acc, a) => {
+        acc[a.color] = (acc[a.color] || 0) + 1;
+        return acc;
+      }, {})} />
+      <SimulationCanvas agents={sim.agents} gridWidth={sim.gridWidth} gridHeight={sim.gridHeight} />
     </div>
   );
 }
