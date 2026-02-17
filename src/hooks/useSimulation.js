@@ -31,10 +31,13 @@ export function useSimulation({ initialWidth = 50, initialHeight = 50, initialAg
   // Simulation tick
   const tick = () => {
     setAgents(prev => {
+      console.log('Before tick, agents count:', prev.length);
       const updated = tickAgents(prev, gridWidth, gridHeight);
+      console.log('After tick, agents count:', updated.length);
+      
       const dist = getColorDistribution(updated);
       if (hasWinner(dist)) {
-        const winnerColor = Object.keys(dist).find(color => dist[color] === agentCount);
+        const winnerColor = Object.keys(dist)[0];
         setWinner(winnerColor);
         setRunning(false);
         return updated;
