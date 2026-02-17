@@ -1,20 +1,33 @@
-import React, { useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-export function SimulationCanvas({ agents, gridWidth, gridHeight, width = 600, height = 600 }) {
-  const canvasRef = useRef();
+export default function SimulationCanvas({ agents, gridWidth, gridHeight, cellSize = 10 }) {
+  const canvasRef = useRef(null);
 
   useEffect(() => {
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.clearRect(0, 0, width, height);
-
-    const cellWidth = width / gridWidth;
-    const cellHeight = height / gridHeight;
-
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw agents
     agents.forEach(agent => {
       ctx.fillStyle = agent.color;
-      ctx.fillRect(agent.x * cellWidth, agent.y * cellHeight, cellWidth, cellHeight);
+      ctx.fillRect(
+        agent.x * cellSize, 
+        agent.y * cellSize, 
+        cellSize - 1, // -1 pour créer une petite grille visible
+        cellSize - 1
+      );
     });
-  }, [agents, gridWidth, gridHeight, width, height]);
+  }, [agents, gridWidth, gridHeight, cellSize]);
 
-  return <canvas ref={canvasRef} width={width} height={height} style={{ border: '2px solid #ccc', borderRadius: '4px' }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={gridWidth * cellSize}
+      height={gridHeight * cellSize}
+      style={{ border: '1px solid black' }}
+    />
+  );
 }

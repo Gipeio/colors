@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '../ui/Button';
+import { Button } from '../ui/Button';  // Attention : c'est { Button } pas Button tout seul
 
 export function ControlPanel({ start, stop, restart, agentCount, gridWidth, gridHeight, setAgentCount, setGridWidth, setGridHeight }) {
   const [localAgents, setLocalAgents] = useState(agentCount);

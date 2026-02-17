@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { initializeAgents, tickAgents, getColorDistribution, hasWinner } from '../simulation';
+import { initializeAgents } from '../simulation/initialization';
+import { tickAgents } from '../simulation/movement';
+import { getColorDistribution } from '../simulation/colorTransfer';
+import { hasWinner } from '../simulation/winCondition';
 
-export function useSimulation({ initialWidth = 20, initialHeight = 20, initialAgents = 100 }) {
+export function useSimulation({ initialWidth = 50, initialHeight = 50, initialAgents = 100 }) {
   const [gridWidth, setGridWidth] = useState(initialWidth);
   const [gridHeight, setGridHeight] = useState(initialHeight);
   const [agentCount, setAgentCount] = useState(initialAgents);
@@ -11,6 +14,7 @@ export function useSimulation({ initialWidth = 20, initialHeight = 20, initialAg
   const [winner, setWinner] = useState(null);
 
   const requestRef = useRef();
+  const timeoutRef = useRef();
 
   // Initialize agents
   const initialize = () => {
@@ -24,32 +28,49 @@ export function useSimulation({ initialWidth = 20, initialHeight = 20, initialAg
     initialize();
   }, []);
 
-  // Simulation tick loop
+  // Simulation tick
   const tick = () => {
     setAgents(prev => {
       const updated = tickAgents(prev, gridWidth, gridHeight);
       const dist = getColorDistribution(updated);
       if (hasWinner(dist)) {
-        setWinner(Object.keys(dist)[0]);
+        const winnerColor = Object.keys(dist).find(color => dist[color] === agentCount);
+        setWinner(winnerColor);
         setRunning(false);
-        cancelAnimationFrame(requestRef.current);
+        return updated;
       }
       return updated;
     });
     setIteration(prev => prev + 1);
-    if (running) requestRef.current = requestAnimationFrame(tick);
   };
+
+  // Loop management
+  useEffect(() => {
+    if (running) {
+      const loop = () => {
+        tick();
+        timeoutRef.current = setTimeout(loop, 100); // 100ms entre chaque tick
+      };
+      timeoutRef.current = setTimeout(loop, 100);
+    }
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [running]);
 
   const start = () => {
     if (!running) {
       setRunning(true);
-      requestRef.current = requestAnimationFrame(tick);
     }
   };
 
   const stop = () => {
     setRunning(false);
-    cancelAnimationFrame(requestRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
   };
 
   const restart = (config) => {
